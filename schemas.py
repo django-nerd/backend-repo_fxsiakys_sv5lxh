@@ -1,48 +1,31 @@
 """
-Database Schemas
+Database Schemas for Crypto Wallet Platform
 
-Define your MongoDB collection schemas here using Pydantic models.
-These schemas are used for data validation in your application.
-
-Each Pydantic model represents a collection in your database.
-Model name is converted to lowercase for the collection name:
-- User -> "user" collection
-- Product -> "product" collection
-- BlogPost -> "blogs" collection
+Each Pydantic model below maps to a MongoDB collection (collection name = lowercase class name).
+Use these schemas for validating inputs before writing to the database.
 """
+from pydantic import BaseModel, Field, EmailStr
+from typing import Optional, Literal
 
-from pydantic import BaseModel, Field
-from typing import Optional
+class Wallet(BaseModel):
+    name: str = Field(..., description="Display name for the wallet")
+    address: str = Field(..., description="Public address or descriptor for the wallet")
+    chain: Optional[str] = Field(None, description="Blockchain network, e.g., Ethereum, Solana")
 
-# Example schemas (replace with your own):
+class Asset(BaseModel):
+    wallet_id: str = Field(..., description="ID of the wallet that owns this asset")
+    symbol: str = Field(..., description="Asset symbol, e.g., BTC, ETH, SOL")
+    amount: float = Field(..., ge=0, description="Amount held")
+
+class Transaction(BaseModel):
+    wallet_id: str = Field(..., description="ID of the wallet involved")
+    type: Literal['deposit', 'withdraw'] = Field(..., description="Transaction type")
+    symbol: str = Field(..., description="Asset symbol")
+    amount: float = Field(..., gt=0, description="Amount transacted")
+    tx_hash: Optional[str] = Field(None, description="Optional blockchain transaction hash")
+    note: Optional[str] = Field(None, description="Optional note")
 
 class User(BaseModel):
-    """
-    Users collection schema
-    Collection name: "user" (lowercase of class name)
-    """
     name: str = Field(..., description="Full name")
-    email: str = Field(..., description="Email address")
-    address: str = Field(..., description="Address")
-    age: Optional[int] = Field(None, ge=0, le=120, description="Age in years")
+    email: EmailStr = Field(..., description="Email address")
     is_active: bool = Field(True, description="Whether user is active")
-
-class Product(BaseModel):
-    """
-    Products collection schema
-    Collection name: "product" (lowercase of class name)
-    """
-    title: str = Field(..., description="Product title")
-    description: Optional[str] = Field(None, description="Product description")
-    price: float = Field(..., ge=0, description="Price in dollars")
-    category: str = Field(..., description="Product category")
-    in_stock: bool = Field(True, description="Whether product is in stock")
-
-# Add your own schemas here:
-# --------------------------------------------------
-
-# Note: The Flames database viewer will automatically:
-# 1. Read these schemas from GET /schema endpoint
-# 2. Use them for document validation when creating/editing
-# 3. Handle all database operations (CRUD) directly
-# 4. You don't need to create any database endpoints!
